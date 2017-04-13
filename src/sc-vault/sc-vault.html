@@ -1252,6 +1252,7 @@
           var serializedIdentity = this.currentidentity || {};
 
           var vault = {
+            id: this.currentaccount,
             type: 'sc-vault',
             version:1,
             keystore: serializedKeystore,
