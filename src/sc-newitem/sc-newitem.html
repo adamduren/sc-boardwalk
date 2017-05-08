@@ -6,7 +6,9 @@
 
 <link rel="import" href="../../bower_components/sc-style/sc-style.html">
 <link rel="import" href="../../bower_components/sc-iconset/sc-iconset.html">
-<link rel="import" href="../sc-geohash/sc-geohash.html">
+<!-- <link rel="import" href="../sc-geohash/sc-geohash.html"> -->
+<link rel="import" href="../sc-redux/sc-redux.html">
+<link rel="import" href="../sc-shh/sc-shh.html">
 
 <!--
 `sc-newitem`
@@ -18,7 +20,8 @@ This component lets a Swarm Citizen create a new offer under the selected hashta
 
 <dom-module id="sc-newitem">
   <template>
-   <sc-geohash geohash="{{geohash}}" locate-on-start></sc-geohash>
+    <sc-shh web3="{{shhweb3}}"></sc-shh>
+    <!-- <sc-geohash geohash="{{geohash}}" locate-on-start></sc-geohash> -->
     <style include="sc-styles">
       :host {
         display: block;
@@ -246,22 +249,50 @@ This component lets a Swarm Citizen create a new offer under the selected hashta
       is: 'sc-newitem',
 
       behaviors: [
-        Polymer.NeonSharedElementAnimatableBehavior
+        Polymer.NeonSharedElementAnimatableBehavior,
+        ReduxBehaviour
       ],
 
+
+      actions: {
+
+        addmydeal: function(mydealdata) {
+         // debugger;
+          let mydeals = this.mydeals.slice(0);
+          mydeals.push(mydealdata);
+
+          return {
+            type: 'MYDEALS',
+            mydeals: mydeals
+          };
+        },        
+        // reply: function(dealdata,replydata){
+        //   let deal = this.deals.indexOf(dealData);
+        // }
+
+      },
+
       properties: {
-        /**
-       * `prop1` this is the first property and what it does is described right here.
-       */
-        // sharedElements: {
-        //   type: Object,
-        //   value: function() {
-        //     return {
-        //       'hero': this.$.avatarimg,
-        //       // 'balance': this.$.balancebox
-        //     }
-        //   }
-        // },
+
+        hashtag: {
+          type: String
+        },
+
+        geohash: {
+          type: String
+        },
+
+        identity: {
+          type: Object,
+          statePath: 'identity',
+        },
+
+        mydeals: {
+          type: Array,
+          statePath: 'mydeals',
+        },
+
+      },
 
       animationConfig: {
         type: Object,
@@ -269,94 +300,26 @@ This component lets a Swarm Citizen create a new offer under the selected hashta
           return {
             'entry': [{
               name: 'slide-from-bottom-animation',
-              node:this.$.newitemcontent,
+              node: this.$.newitemcontent,
               toPage: this,
               timing: {
                 duration: 600
               }
-            // },{
-            //   name: 'slide-from-right-animation',
-            //   node:this.$.topbar,
-            //   fromPage: this,
-            //   timing: {
-            //     duration: 600
-            //   }
-            // },{
-            //   name: 'fade-in-animation',
-            //   node:this.$.backbtn,
-            //   fromPage: this,
-            //   timing: {
-            //     duration: 200
-            //   }
-            // },{
-            //   name: 'fade-in-animation',
-            //   node:this.$.username,
-            //   fromPage: this,
-            //   timing: {
-            //     duration: 200
-            //   }
-            // }, {
-              // name: 'hero-animation',
-              // id: 'hero',
-              // toPage: this,
-              // timing: {
-              //     duration: 200
-              // }
-            // }, {
-            //   name: 'hero-animation',
-            //   id: 'balance',
-            //   toPage: this,
-            //   timing: {
-            //       duration: 200
-            //   }
+
             }],
 
             'exit': [{
               name: 'fade-out-animation',
-              node:this.$.newitemcontent,
+              node: this.$.newitemcontent,
               fromPage: this,
               timing: {
                 duration: 125
               }
 
-            // },{
-            //   name: 'fade-out-animation',
-            //   node:this.$.backbtn,
-            //   fromPage: this,
-            //   timing: {
-            //     duration: 125
-            //   }
-
-            // },{
-            //   name: 'fade-out-animation',
-            //   node:this.$.topbar,
-            //   fromPage: this,
-            //   timing: {
-            //     duration: 125
-            //   }
-            // }, {
-            //   name: 'hero-animation',
-            //   id: 'hero',
-            //   fromPage: this,
-            //   timing: {
-            //       duration: 600
-            //   }
-
-            // }, {
-            //   name: 'hero-animation',
-            //   id: 'balance',
-            //   fromPage: this,
-            //   timing: {
-            //       duration: 600
-            //   }
-              }]
-            }
-          },
-        }
-
-
+            }]
+          }
+        },
       },
-
       observers: [
         '_btnable(offermsg,replyamount)',
         '_geohash(geohash)'
@@ -416,12 +379,76 @@ This component lets a Swarm Citizen create a new offer under the selected hashta
       },
 
       confirmRequest: function(){
-        var totalnew = {
+        // var totalnew = {
+        //   msg: this.offermsg,
+        //   amount: this.replyamount,
+        //   geohash: this.geohash,
+        // }
+        this.fire('new-submitted');
+
+
+
+        var self = this;
+
+        var newrequest = {
+          id: UUIDjs.create().toString(),
+          type: 'request-create',
+          seeker: {
+            avatar: this.identity.avatarhash,
+            username : this.identity.username,
+            pubkey : this.identity.pubkey
+          },
           msg: this.offermsg,
           amount: this.replyamount,
-          geohash: this.geohash,
+          hashtag: this.hashtag,
+          offertime: Date.now(),
         }
-        this.fire('new-submitted',totalnew);
+
+        var topics = [
+          this.shhweb3.encodetopic('swarmcity-v1'),
+          this.shhweb3.encodetopic('simpledeal-request-create'),
+          this.shhweb3.encodetopic(newrequest.hashtag),
+          this.shhweb3.encodetopic(newrequest.id),
+          this.shhweb3.encodetopic(this.geohash.slice(0,1)),
+          this.shhweb3.encodetopic(this.geohash.slice(0,2)),
+          this.shhweb3.encodetopic(this.geohash.slice(0,3)),
+          this.shhweb3.encodetopic(this.geohash.slice(0,4)),
+          this.shhweb3.encodetopic(this.geohash.slice(0,5)),
+          this.shhweb3.encodetopic(this.geohash.slice(0,6)),
+        ];
+
+        if (this.shhweb3 && this.hashtag) {
+          if (!this.shhidentity) {
+            this.shhidentity = this.shhweb3.shh.newIdentity();
+          }
+
+          var options = {
+            "from": this.shhidentity,
+            "topics": topics,
+            "payload": JSON.stringify(newrequest),
+            "ttl": 60 * 60 * 24,
+            "priority": 1000
+          };
+
+          console.log('posting to topics', topics);
+
+          return this.shhweb3.shh.post(options, function(err, res) {
+            debugger;
+            console.log(err, res);
+             self.dispatch('addmydeal',newrequest);
+            self.set('route.path','/'+self.hashtag+'/list');
+          });
+        }
+
+        // console.log('Yes!', newrequest);
+        //this.dispatch('add',newrequest);
+        //        this.push('deals',newrequest);
+
+
+
+
+
+
         
       },
 

@@ -182,7 +182,8 @@ This components simple shows the number of in-app notifications in a badge-icon.
         if (this.shhweb3 && this.identity) {
 
           var mytopics = [
-            self.shhweb3.encodetopic("notification"),
+            self.shhweb3.encodetopic('swarmcity-v1'),
+            self.shhweb3.encodetopic('notification'),
             [self.shhweb3.encodetopic('broadcast'),self.shhweb3.encodetopic(this.identity.pubkey)],
           ];
 

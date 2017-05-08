@@ -349,7 +349,9 @@ This is the component showing all requests of a certain hashtag. It contains a r
       <sc-newitem
         data-action="newitem"
         identity="[[identity]]"
+        hashtag="[[hashtag]]"
         pubkey="[[account]]"
+        geohash="[[geohash]]"
         on-back="newitem_cancel"
         on-cancel=""
         on-new-submitted="newitem_submitted"
@@ -394,16 +396,16 @@ This is the component showing all requests of a certain hashtag. It contains a r
           };
         },
  
-        addmydeal: function(mydealdata) {
-         // debugger;
-          let mydeals = this.mydeals.slice(0);
-          mydeals.push(mydealdata);
+        // addmydeal: function(mydealdata) {
+        //  // debugger;
+        //   let mydeals = this.mydeals.slice(0);
+        //   mydeals.push(mydealdata);
 
-          return {
-            type: 'MYDEALS',
-            mydeals: mydeals
-          };
-        },        
+        //   return {
+        //     type: 'MYDEALS',
+        //     mydeals: mydeals
+        //   };
+        // },        
         // reply: function(dealdata,replydata){
         //   let deal = this.deals.indexOf(dealData);
         // }
@@ -672,41 +674,44 @@ This is the component showing all requests of a certain hashtag. It contains a r
       },
 
       _starthastaglistener: function() {
-
+        
         if (this.filter) {
           return;
         }
 
         var self = this;
-        if (this.shhweb3 && this.geohash) {
+        if (this.shhweb3 && this.geohash && this.hashtag) {
 
-      var mytopics = [
-        null, // self.shhweb3.encodetopic("request-create"),
-        self.shhweb3.encodetopic(this.hashtag),
-        null,
-        null,
-        [null,self.shhweb3.encodetopic(this.geohash.slice(0, 2))],
-        null,
-        null
-        ];
+          var mytopics = [
+            this.shhweb3.encodetopic('swarmcity-v1'),
+            this.shhweb3.encodetopic('simpledeal-request-create'),
+            this.shhweb3.encodetopic(this.hashtag),
+            null,
+            (this.range < 1) ? null : this.shhweb3.encodetopic(this.geohash.slice(0, 1)),
+            (this.range < 2) ? null : this.shhweb3.encodetopic(this.geohash.slice(0, 2)),
+            (this.range < 3) ? null : this.shhweb3.encodetopic(this.geohash.slice(0, 3)),
+            (this.range < 4) ? null : this.shhweb3.encodetopic(this.geohash.slice(0, 4)),
+            (this.range < 5) ? null : this.shhweb3.encodetopic(this.geohash.slice(0, 5)),
+            (this.range < 6) ? null : this.shhweb3.encodetopic(this.geohash.slice(0, 6)),
+          ];
 
           this.filter = self.shhweb3.shh.filter({
             "topics": mytopics,
           });
 
-          console.log("sc-whisperer: channelswitch, start listening to", mytopics);
           this.filter.watch(this._processmessage.bind(this));
         }
       },
 
       // processinging of channel setup messages.
       _processmessage: function(error, result) {
-        //debugger;
+
+        debugger;
         var payload;
         var self = this;
         try {
           payload = JSON.parse(self.shhweb3.toAscii(result.payload));
-          console.log('incoming in whisperer: shhweb3 ', payload);
+          console.log('sc-hashtag -> incoming in whisperer: shhweb3 ', payload);
           
           //this.push('deals',payload);
         } catch (e) {
@@ -876,55 +881,55 @@ This is the component showing all requests of a certain hashtag. It contains a r
 
         var self = this;
 
-        var newrequest = {
-          id: UUIDjs.create().toString(),
-          type: 'request-create',
-          offereravatar: this.identity.avatarhash,
-          offerer: this.identity.username,
-          offererpubkey: this.identity.pubkey,
-          offer: e.detail.msg,
-          offerhashtag: this.hashtag,
-          //          offererrep: '0',
-          offertime: Date.now(),
-          offeramount: e.detail.amount,
-          //          nrofreplies: '0'
-        }
+        // var newrequest = {
+        //   id: UUIDjs.create().toString(),
+        //   type: 'request-create',
+        //   offereravatar: this.identity.avatarhash,
+        //   offerer: this.identity.username,
+        //   offererpubkey: this.identity.pubkey,
+        //   offer: e.detail.msg,
+        //   offerhashtag: this.hashtag,
+        //   //          offererrep: '0',
+        //   offertime: Date.now(),
+        //   offeramount: e.detail.amount,
+        //   //          nrofreplies: '0'
+        // }
 
-        var topics = [
-          this.shhweb3.encodetopic(newrequest.type),
-          this.shhweb3.encodetopic(newrequest.offerhashtag),
-          this.shhweb3.encodetopic(newrequest.id),
-          this.shhweb3.encodetopic(''),
-          this.shhweb3.encodetopic(e.detail.geohash.slice(0, 2)),
-          this.shhweb3.encodetopic(e.detail.geohash.slice(0, 3)),
-          this.shhweb3.encodetopic(e.detail.geohash.slice(0, 4)),
-        ];
+        // var topics = [
+        //   this.shhweb3.encodetopic(newrequest.type),
+        //   this.shhweb3.encodetopic(newrequest.offerhashtag),
+        //   this.shhweb3.encodetopic(newrequest.id),
+        //   this.shhweb3.encodetopic(''),
+        //   this.shhweb3.encodetopic(e.detail.geohash.slice(0, 2)),
+        //   this.shhweb3.encodetopic(e.detail.geohash.slice(0, 3)),
+        //   this.shhweb3.encodetopic(e.detail.geohash.slice(0, 4)),
+        // ];
 
-        if (this.shhweb3 && this.hashtag) {
-          if (!this.shhidentity) {
-            this.shhidentity = this.shhweb3.shh.newIdentity();
-          }
+        // if (this.shhweb3 && this.hashtag) {
+        //   if (!this.shhidentity) {
+        //     this.shhidentity = this.shhweb3.shh.newIdentity();
+        //   }
 
-          var options = {
-            "from": this.shhidentity,
-            "topics": topics,
-            "payload": this.shhweb3.fromAscii(JSON.stringify(newrequest)),
-            "ttl": 60 * 60 * 24, // is a time for the message to live on the network, specified in seconds. This defaults to 50.
-            "priority": 1000
-          };
+        //   var options = {
+        //     "from": this.shhidentity,
+        //     "topics": topics,
+        //     "payload": this.shhweb3.fromAscii(JSON.stringify(newrequest)),
+        //     "ttl": 60 * 60 * 24, // is a time for the message to live on the network, specified in seconds. This defaults to 50.
+        //     "priority": 1000
+        //   };
 
-          console.log('posting to topics', topics);
+        //   console.log('posting to topics', topics);
 
-          return this.shhweb3.shh.post(options, function(err, res) {
-            console.log(err, res);
-             self.dispatch('addmydeal',newrequest);
-            self.set('route.path','/'+self.hashtag+'/list');
-          });
-        }
+        //   return this.shhweb3.shh.post(options, function(err, res) {
+        //     console.log(err, res);
+        //      self.dispatch('addmydeal',newrequest);
+        self.set('route.path','/'+self.hashtag+'/list');
+        //   });
+        // }
 
-        // console.log('Yes!', newrequest);
-        //this.dispatch('add',newrequest);
-        //        this.push('deals',newrequest);
+        // // console.log('Yes!', newrequest);
+        // //this.dispatch('add',newrequest);
+        // //        this.push('deals',newrequest);
 
       },
 

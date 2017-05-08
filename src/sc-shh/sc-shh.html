@@ -35,11 +35,13 @@
           }
           acshh = new Web3(new Web3.providers.HttpProvider(this.host));
           acshh.shh._filter = acshh.shh.filter;
+          acshh.shh._post = acshh.shh.post;
           console.log('sc-shh -> created Web3');
         }
         this.set('web3',acshh);
         this.set('web3.encodetopic',this.encodetopic.bind(this));
         this.set('web3.shh.filter',this.filter.bind(this));
+        this.set('web3.shh.post',this.post.bind(this));
         this.fire('web3-ready');
       },
 
@@ -47,11 +49,41 @@
         return this.web3.fromAscii(this.shhprefix + topic);
       },
 
+      decodearray: function(myarray,index,depth){
+        if (!myarray){
+          return console.log('',index,'null');
+        }
+        for (var i=0;i<myarray.length; i++){
+            if (typeof myarray[i] === 'object'){
+              this.decodearray(myarray[i],i,(depth||0)+1);
+            }else{
+              console.log('**********'.slice(0,depth||0),i,this.web3.toAscii(myarray[i]));
+            }
+        }
+      },
+
       filter: function(){
-        //console.log('maak is een filter');
-        var filter =  acshh.shh._filter(arguments);
+        //debugger;
+        if (arguments[0] && arguments[0].topics){
+          var topics = arguments[0].topics;
+          console.log('New whisper listener - topics:');
+          this.decodearray(topics);
+        }
+        var filter =  acshh.shh._filter.apply(acshh.shh, arguments);
+        //debugger;
         acshh_filters.push[filter];
         return filter;
+      },
+
+      post: function(){
+        console.log('SHH post WRAPPER');
+        if (arguments[0] && arguments[0].topics){
+          var topics = arguments[0].topics;
+          console.log('posting new whisper message to topics:');
+          this.decodearray(topics);
+        }        
+        var post =  acshh.shh._post.apply(acshh.shh, arguments);
+        return post;
       }
 
     });
